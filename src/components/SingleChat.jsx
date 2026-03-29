@@ -5,8 +5,7 @@ import { ArrowLeft, Send, Image, Smile, MoreVertical } from "lucide-react";
 import { toast } from "react-hot-toast";
 import io from "socket.io-client";
 import ScrollableChat from "./ScrollableChat";
-import Lottie from "react-lottie";
-import animationData from "../animations/typing.json";
+// Lottie and animationData removed to avoid missing dependency errors
 
 const ENDPOINT = "http://localhost:5000";
 var socket, selectedChatCompare;
@@ -22,17 +21,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { selectedChat, setSelectedChat, user, notification, setNotification } =
     ChatState();
 
-  const defaultOptions = {
-    loop: true,
-    autoplay: true,
-    animationData: animationData,
-    rendererSettings: {
-      preserveAspectRatio: "xMidYMid slice",
-    },
-  };
+  // defaultOptions removed
 
   const fetchMessages = async () => {
-    if (!selectedChat) return;
+    if (!selectedChat || !user?.token) return;
 
     try {
       const config = {
@@ -52,6 +44,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
       socket.emit("join chat", selectedChat._id);
     } catch (error) {
+      console.error(error);
       toast.error("Failed to Load the Messages");
     }
   };
@@ -78,6 +71,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         socket.emit("new message", data);
         setMessages([...messages, data]);
       } catch (error) {
+        console.error(error);
         toast.error("Failed to send the Message");
       }
     }
@@ -101,20 +95,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   }, [selectedChat]);
 
   useEffect(() => {
-    socket.on("message recieved", (newMessageRecieved) => {
+    const handleMessageReceived = (newMessageRecieved) => {
       if (
-        !selectedChatCompare || // if chat is not selected or doesn't match current chat
+        !selectedChatCompare ||
         selectedChatCompare._id !== newMessageRecieved.chat._id
       ) {
         if (!notification.includes(newMessageRecieved)) {
           setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
+          setFetchAgain((prev) => !prev);
         }
       } else {
-        setMessages([...messages, newMessageRecieved]);
+        setMessages((prevMessages) => [...prevMessages, newMessageRecieved]);
       }
-    });
-  });
+    };
+
+    socket.on("message recieved", handleMessageReceived);
+
+    return () => {
+      socket.off("message recieved", handleMessageReceived);
+    };
+  }, [messages, notification, selectedChat, fetchAgain, setFetchAgain, setNotification]);
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -172,12 +172,10 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
             )}
 
             {istyping ? (
-              <div className="typing-indicator">
-                <Lottie
-                  options={defaultOptions}
-                  width={70}
-                  style={{ marginBottom: 15, marginLeft: 0 }}
-                />
+              <div className="typing-indicator-dots">
+                <span></span>
+                <span></span>
+                <span></span>
               </div>
             ) : (
               <></>
@@ -277,6 +275,26 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
         @media (max-width: 768px) {
           .back-btn { display: block; }
+        }
+
+        .typing-indicator-dots {
+          display: flex;
+          gap: 5px;
+          padding: 10px;
+          margin-bottom: 10px;
+        }
+        .typing-indicator-dots span {
+          width: 8px;
+          height: 8px;
+          background-color: var(--text-secondary);
+          border-radius: 50%;
+          animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator-dots span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator-dots span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+          0%, 80%, 100% { transform: scale(0); }
+          40% { transform: scale(1.0); }
         }
       `}</style>
     </>

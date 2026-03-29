@@ -1,8 +1,17 @@
-import ScrollableFeed from "react-scrollable-feed";
+import { useEffect, useRef } from "react";
 import { ChatState } from "../Context/ChatProvider";
 
 const ScrollableChat = ({ messages }) => {
   const { user } = ChatState();
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   const isSameSender = (messages, m, i, userId) => {
     return (
@@ -43,7 +52,7 @@ const ScrollableChat = ({ messages }) => {
   };
 
   return (
-    <ScrollableFeed>
+    <div className="scrollable-messages">
       {messages &&
         messages.map((m, i) => (
           <div style={{ display: "flex" }} key={m._id}>
@@ -84,7 +93,17 @@ const ScrollableChat = ({ messages }) => {
             </span>
           </div>
         ))}
-    </ScrollableFeed>
+      <div ref={messagesEndRef} />
+      <style jsx>{`
+        .scrollable-messages {
+          height: 100%;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          padding-bottom: 20px;
+        }
+      `}</style>
+    </div>
   );
 };
 

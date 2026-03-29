@@ -50,6 +50,7 @@ function SideDrawer() {
       setLoading(false);
       setSearchResult(data);
     } catch (error) {
+      console.error(error);
       toast.error("Failed to Load the Search Results");
     }
   };
@@ -72,6 +73,7 @@ function SideDrawer() {
       setLoadingChat(false);
       setIsDrawerOpen(false);
     } catch (error) {
+      console.error(error);
       toast.error("Error fetching the chat");
     }
   };

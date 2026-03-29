@@ -70,11 +70,18 @@ const Signup = () => {
       })
         .then((res) => res.json())
         .then((data) => {
-          setPic(data.url.toString());
+          if (data.url) {
+            setPic(data.url.toString());
+          } else {
+            console.warn("Cloudinary Upload Result:", data);
+            setPic("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg");
+          }
           setPicLoading(false);
         })
         .catch((err) => {
-          console.log(err);
+          console.error("Cloudinary Upload Error:", err);
+          toast.error("Image upload failed, using default.");
+          setPic("https://icon-library.com/images/anonymous-avatar-icon/anonymous-avatar-icon-25.jpg");
           setPicLoading(false);
         });
     } else {
